@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Icon from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +8,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
+import QRCode from 'qrcode';
 
 type Protocol = 'openvpn' | 'wireguard' | 'ikev2' | 'ipsec';
 
@@ -84,6 +85,7 @@ export default function Index() {
   const [serverAddress, setServerAddress] = useState<string>('vpn.example.com');
   const [serverPort, setServerPort] = useState<string>('1194');
   const [dnsServers, setDnsServers] = useState<string>('1.1.1.1, 8.8.8.8');
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
 
   const generateConfig = () => {
     const timestamp = new Date().toISOString();
@@ -183,6 +185,23 @@ conn vpn-ipsec
     }
     
     setGeneratedConfig(config);
+    generateQRCode(config);
+  };
+
+  const generateQRCode = async (config: string) => {
+    try {
+      const url = await QRCode.toDataURL(config, {
+        width: 300,
+        margin: 2,
+        color: {
+          dark: '#10b981',
+          light: '#ffffff'
+        }
+      });
+      setQrCodeUrl(url);
+    } catch (error) {
+      console.error('QR Code generation failed:', error);
+    }
   };
 
   const downloadConfig = () => {
@@ -455,35 +474,60 @@ conn vpn-ipsec
             </div>
 
             {generatedConfig && (
-              <Card className="animate-scale-in">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>Ваш конфиг готов!</CardTitle>
-                    <Badge variant="default">
-                      <Icon name="Check" size={14} className="mr-1" />
-                      {protocols[selectedProtocol].name}
-                    </Badge>
-                  </div>
-                  <CardDescription>
-                    Скопируйте конфиг или скачайте файл для импорта в ваше VPN приложение
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="bg-muted rounded-lg p-4 max-h-96 overflow-auto">
-                    <pre className="text-sm font-mono">{generatedConfig}</pre>
-                  </div>
-                  <div className="flex gap-3">
-                    <Button onClick={downloadConfig} className="flex-1">
-                      <Icon name="Download" size={18} className="mr-2" />
-                      Скачать файл
-                    </Button>
-                    <Button onClick={copyConfig} variant="outline" className="flex-1">
-                      <Icon name="Copy" size={18} className="mr-2" />
-                      Копировать
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="space-y-6">
+                <Card className="animate-scale-in">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle>Ваш конфиг готов!</CardTitle>
+                      <Badge variant="default">
+                        <Icon name="Check" size={14} className="mr-1" />
+                        {protocols[selectedProtocol].name}
+                      </Badge>
+                    </div>
+                    <CardDescription>
+                      Скопируйте конфиг или скачайте файл для импорта в ваше VPN приложение
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="bg-muted rounded-lg p-4 max-h-96 overflow-auto">
+                      <pre className="text-sm font-mono">{generatedConfig}</pre>
+                    </div>
+                    <div className="flex gap-3">
+                      <Button onClick={downloadConfig} className="flex-1">
+                        <Icon name="Download" size={18} className="mr-2" />
+                        Скачать файл
+                      </Button>
+                      <Button onClick={copyConfig} variant="outline" className="flex-1">
+                        <Icon name="Copy" size={18} className="mr-2" />
+                        Копировать
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {qrCodeUrl && (
+                  <Card className="animate-scale-in">
+                    <CardHeader>
+                      <div className="flex items-center gap-2">
+                        <Icon name="QrCode" className="text-primary" size={24} />
+                        <CardTitle>QR-код для быстрого подключения</CardTitle>
+                      </div>
+                      <CardDescription>
+                        Отсканируйте QR-код в вашем VPN приложении на мобильном устройстве
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-col items-center space-y-4">
+                      <div className="bg-white p-4 rounded-lg border-2 border-primary/20">
+                        <img src={qrCodeUrl} alt="QR Code" className="w-64 h-64" />
+                      </div>
+                      <div className="text-center text-sm text-muted-foreground">
+                        <p>Откройте приложение {protocols[selectedProtocol].name}</p>
+                        <p>и отсканируйте этот код для мгновенного подключения</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
             )}
           </div>
         )}
