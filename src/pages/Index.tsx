@@ -58,21 +58,24 @@ interface ServerLocation {
   address: string;
   flag: string;
   port: string;
+  ping: string;
+  speed: string;
+  load: number;
 }
 
 const serverLocations: ServerLocation[] = [
-  { country: 'США', city: 'Нью-Йорк', address: 'us-ny.vpn.example.com', flag: '🇺🇸', port: '1194' },
-  { country: 'США', city: 'Лос-Анджелес', address: 'us-la.vpn.example.com', flag: '🇺🇸', port: '1194' },
-  { country: 'Германия', city: 'Франкфурт', address: 'de-fra.vpn.example.com', flag: '🇩🇪', port: '1194' },
-  { country: 'Германия', city: 'Берлин', address: 'de-ber.vpn.example.com', flag: '🇩🇪', port: '1194' },
-  { country: 'Сингапур', city: 'Сингапур', address: 'sg.vpn.example.com', flag: '🇸🇬', port: '1194' },
-  { country: 'Япония', city: 'Токио', address: 'jp-tok.vpn.example.com', flag: '🇯🇵', port: '1194' },
-  { country: 'Великобритания', city: 'Лондон', address: 'uk-lon.vpn.example.com', flag: '🇬🇧', port: '1194' },
-  { country: 'Франция', city: 'Париж', address: 'fr-par.vpn.example.com', flag: '🇫🇷', port: '1194' },
-  { country: 'Нидерланды', city: 'Амстердам', address: 'nl-ams.vpn.example.com', flag: '🇳🇱', port: '1194' },
-  { country: 'Канада', city: 'Торонто', address: 'ca-tor.vpn.example.com', flag: '🇨🇦', port: '1194' },
-  { country: 'Австралия', city: 'Сидней', address: 'au-syd.vpn.example.com', flag: '🇦🇺', port: '1194' },
-  { country: 'Швейцария', city: 'Цюрих', address: 'ch-zur.vpn.example.com', flag: '🇨🇭', port: '1194' },
+  { country: 'США', city: 'Нью-Йорк', address: 'us-ny.vpn.example.com', flag: '🇺🇸', port: '1194', ping: '12 мс', speed: '1 Гбит/с', load: 45 },
+  { country: 'США', city: 'Лос-Анджелес', address: 'us-la.vpn.example.com', flag: '🇺🇸', port: '1194', ping: '18 мс', speed: '1 Гбит/с', load: 62 },
+  { country: 'Германия', city: 'Франкфурт', address: 'de-fra.vpn.example.com', flag: '🇩🇪', port: '1194', ping: '8 мс', speed: '10 Гбит/с', load: 38 },
+  { country: 'Германия', city: 'Берлин', address: 'de-ber.vpn.example.com', flag: '🇩🇪', port: '1194', ping: '10 мс', speed: '10 Гбит/с', load: 52 },
+  { country: 'Сингапур', city: 'Сингапур', address: 'sg.vpn.example.com', flag: '🇸🇬', port: '1194', ping: '28 мс', speed: '1 Гбит/с', load: 71 },
+  { country: 'Япония', city: 'Токио', address: 'jp-tok.vpn.example.com', flag: '🇯🇵', port: '1194', ping: '32 мс', speed: '1 Гбит/с', load: 58 },
+  { country: 'Великобритания', city: 'Лондон', address: 'uk-lon.vpn.example.com', flag: '🇬🇧', port: '1194', ping: '15 мс', speed: '10 Гбит/с', load: 41 },
+  { country: 'Франция', city: 'Париж', address: 'fr-par.vpn.example.com', flag: '🇫🇷', port: '1194', ping: '14 мс', speed: '10 Гбит/с', load: 49 },
+  { country: 'Нидерланды', city: 'Амстердам', address: 'nl-ams.vpn.example.com', flag: '🇳🇱', port: '1194', ping: '11 мс', speed: '10 Гбит/с', load: 35 },
+  { country: 'Канада', city: 'Торонто', address: 'ca-tor.vpn.example.com', flag: '🇨🇦', port: '1194', ping: '22 мс', speed: '1 Гбит/с', load: 54 },
+  { country: 'Австралия', city: 'Сидней', address: 'au-syd.vpn.example.com', flag: '🇦🇺', port: '1194', ping: '42 мс', speed: '1 Гбит/с', load: 67 },
+  { country: 'Швейцария', city: 'Цюрих', address: 'ch-zur.vpn.example.com', flag: '🇨🇭', port: '1194', ping: '9 мс', speed: '10 Гбит/с', load: 33 },
 ];
 
 const faqItems = [
@@ -479,15 +482,86 @@ conn vpn-ipsec
                       </SelectItem>
                       {serverLocations.map((location) => (
                         <SelectItem key={location.address} value={location.address}>
-                          <div className="flex items-center gap-2">
-                            <span>{location.flag}</span>
-                            <span>{location.country} — {location.city}</span>
+                          <div className="flex items-center justify-between gap-3 w-full">
+                            <div className="flex items-center gap-2">
+                              <span>{location.flag}</span>
+                              <span>{location.country} — {location.city}</span>
+                            </div>
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <Icon name="Gauge" size={12} />
+                                {location.ping}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Icon name="Zap" size={12} />
+                                {location.speed}
+                              </span>
+                            </div>
                           </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
+
+                {selectedLocation !== 'custom' && (
+                  <Card className="bg-primary/5 border-primary/20">
+                    <CardContent className="pt-4">
+                      {(() => {
+                        const location = serverLocations.find(loc => loc.address === selectedLocation);
+                        if (!location) return null;
+                        
+                        const getLoadColor = (load: number) => {
+                          if (load < 40) return 'text-green-600';
+                          if (load < 70) return 'text-yellow-600';
+                          return 'text-red-600';
+                        };
+
+                        const getLoadStatus = (load: number) => {
+                          if (load < 40) return 'Низкая';
+                          if (load < 70) return 'Средняя';
+                          return 'Высокая';
+                        };
+
+                        return (
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium">Статистика сервера</span>
+                              <Badge variant="secondary" className="text-xs">
+                                {location.flag} {location.city}
+                              </Badge>
+                            </div>
+                            <div className="grid grid-cols-3 gap-4">
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                  <Icon name="Gauge" size={14} />
+                                  <span>Пинг</span>
+                                </div>
+                                <div className="text-lg font-semibold text-primary">{location.ping}</div>
+                              </div>
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                  <Icon name="Zap" size={14} />
+                                  <span>Скорость</span>
+                                </div>
+                                <div className="text-lg font-semibold text-primary">{location.speed}</div>
+                              </div>
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                  <Icon name="Activity" size={14} />
+                                  <span>Нагрузка</span>
+                                </div>
+                                <div className={`text-lg font-semibold ${getLoadColor(location.load)}`}>
+                                  {getLoadStatus(location.load)}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </CardContent>
+                  </Card>
+                )}
 
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
