@@ -13,6 +13,15 @@ import QRCode from 'qrcode';
 
 type Protocol = 'openvpn' | 'wireguard' | 'ikev2' | 'ipsec';
 
+interface ConfigHistory {
+  id: string;
+  protocol: Protocol;
+  serverAddress: string;
+  serverPort: string;
+  timestamp: string;
+  config: string;
+}
+
 interface ProtocolInfo {
   name: string;
   description: string;
@@ -114,6 +123,14 @@ export default function Index() {
   const [serverPort, setServerPort] = useState<string>('1194');
   const [dnsServers, setDnsServers] = useState<string>('1.1.1.1, 8.8.8.8');
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
+  const [configHistory, setConfigHistory] = useState<ConfigHistory[]>(() => {
+    const saved = localStorage.getItem('vpn-config-history');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('vpn-config-history', JSON.stringify(configHistory));
+  }, [configHistory]);
 
   const handleLocationChange = (value: string) => {
     setSelectedLocation(value);
@@ -225,6 +242,17 @@ conn vpn-ipsec
     
     setGeneratedConfig(config);
     generateQRCode(config);
+    
+    const historyItem: ConfigHistory = {
+      id: Date.now().toString(),
+      protocol: selectedProtocol,
+      serverAddress,
+      serverPort,
+      timestamp: new Date().toLocaleString('ru-RU'),
+      config,
+    };
+    
+    setConfigHistory(prev => [historyItem, ...prev.slice(0, 9)]);
   };
 
   const generateQRCode = async (config: string) => {
@@ -266,6 +294,24 @@ conn vpn-ipsec
     navigator.clipboard.writeText(generatedConfig);
   };
 
+  const loadHistoryItem = (item: ConfigHistory) => {
+    setGeneratedConfig(item.config);
+    setSelectedProtocol(item.protocol);
+    setServerAddress(item.serverAddress);
+    setServerPort(item.serverPort);
+    setSelectedLocation('custom');
+    generateQRCode(item.config);
+    setActiveSection('generator');
+  };
+
+  const deleteHistoryItem = (id: string) => {
+    setConfigHistory(prev => prev.filter(item => item.id !== id));
+  };
+
+  const clearHistory = () => {
+    setConfigHistory([]);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/30">
       <nav className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-50">
@@ -300,6 +346,20 @@ conn vpn-ipsec
                 FAQ
               </Button>
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setActiveSection('home')}
+              className="relative"
+            >
+              <Icon name="History" size={18} className="mr-2" />
+              История
+              {configHistory.length > 0 && (
+                <Badge variant="default" className="ml-2 h-5 w-5 p-0 flex items-center justify-center rounded-full">
+                  {configHistory.length}
+                </Badge>
+              )}
+            </Button>
           </div>
         </div>
       </nav>
@@ -332,6 +392,62 @@ conn vpn-ipsec
                 </Button>
               </div>
             </section>
+
+            {configHistory.length > 0 && (
+              <section>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-3xl font-bold">История конфигов</h2>
+                  <Button variant="outline" size="sm" onClick={clearHistory}>
+                    <Icon name="Trash2" size={16} className="mr-2" />
+                    Очистить историю
+                  </Button>
+                </div>
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {configHistory.map((item) => (
+                    <Card key={item.id} className="hover:shadow-lg transition-shadow">
+                      <CardHeader>
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-1">
+                            <CardTitle className="text-lg">{protocols[item.protocol].name}</CardTitle>
+                            <CardDescription className="text-xs">{item.timestamp}</CardDescription>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => deleteHistoryItem(item.id)}
+                            className="h-8 w-8"
+                          >
+                            <Icon name="X" size={16} />
+                          </Button>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          <div className="text-sm space-y-1">
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                              <Icon name="Server" size={14} />
+                              <span className="truncate">{item.serverAddress}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                              <Icon name="Hash" size={14} />
+                              <span>Порт: {item.serverPort}</span>
+                            </div>
+                          </div>
+                          <Button
+                            onClick={() => loadHistoryItem(item)}
+                            size="sm"
+                            className="w-full"
+                          >
+                            <Icon name="Download" size={14} className="mr-2" />
+                            Загрузить конфиг
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </section>
+            )}
 
             <section className="grid md:grid-cols-3 gap-6">
               <Card className="animate-scale-in">
