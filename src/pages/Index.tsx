@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { Input } from '@/components/ui/input';
 
 type Protocol = 'openvpn' | 'wireguard' | 'ikev2' | 'ipsec';
 
@@ -80,6 +81,9 @@ export default function Index() {
   const [selectedProtocol, setSelectedProtocol] = useState<Protocol>('wireguard');
   const [activeSection, setActiveSection] = useState<'home' | 'generator' | 'faq'>('home');
   const [generatedConfig, setGeneratedConfig] = useState<string>('');
+  const [serverAddress, setServerAddress] = useState<string>('vpn.example.com');
+  const [serverPort, setServerPort] = useState<string>('1194');
+  const [dnsServers, setDnsServers] = useState<string>('1.1.1.1, 8.8.8.8');
 
   const generateConfig = () => {
     const timestamp = new Date().toISOString();
@@ -94,7 +98,7 @@ export default function Index() {
 client
 dev tun
 proto udp
-remote vpn.example.com 1194
+remote ${serverAddress} ${serverPort}
 resolv-retry infinite
 nobind
 persist-key
@@ -121,12 +125,12 @@ verb 3
 # Generated: ${timestamp}
 PrivateKey = ${randomKey}base64key==
 Address = 10.0.0.2/32
-DNS = 1.1.1.1, 8.8.8.8
+DNS = ${dnsServers}
 
 [Peer]
 PublicKey = ServerPublicKeyBase64==
 PresharedKey = PresharedKeyBase64==
-Endpoint = vpn.example.com:51820
+Endpoint = ${serverAddress}:${serverPort}
 AllowedIPs = 0.0.0.0/0, ::/0
 PersistentKeepalive = 25`;
         break;
@@ -143,8 +147,8 @@ conn vpn-ikev2
   left=%any
   leftid=@client-${randomKey}
   leftauth=eap-mschapv2
-  right=vpn.example.com
-  rightid=@vpn.example.com
+  right=${serverAddress}
+  rightid=@${serverAddress}
   rightauth=pubkey
   rightsendcert=always
   eap_identity=%identity
@@ -164,8 +168,8 @@ conn vpn-ipsec
   authby=secret
   left=%any
   leftid=@client-${randomKey}
-  right=vpn.example.com
-  rightid=@vpn.example.com
+  right=${serverAddress}
+  rightid=@${serverAddress}
   ike=aes256-sha1-modp2048!
   esp=aes256-sha1!
   aggressive=yes
@@ -391,6 +395,55 @@ conn vpn-ipsec
                     ))}
                   </div>
                 </RadioGroup>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Настройки сервера</CardTitle>
+                <CardDescription>
+                  Настройте адрес сервера, порт и DNS серверы для вашего конфига
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="server-address">
+                      <Icon name="Server" size={16} className="inline mr-1" />
+                      Адрес сервера
+                    </Label>
+                    <Input
+                      id="server-address"
+                      value={serverAddress}
+                      onChange={(e) => setServerAddress(e.target.value)}
+                      placeholder="vpn.example.com"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="server-port">
+                      <Icon name="Hash" size={16} className="inline mr-1" />
+                      Порт
+                    </Label>
+                    <Input
+                      id="server-port"
+                      value={serverPort}
+                      onChange={(e) => setServerPort(e.target.value)}
+                      placeholder="1194"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dns-servers">
+                    <Icon name="Globe" size={16} className="inline mr-1" />
+                    DNS серверы (через запятую)
+                  </Label>
+                  <Input
+                    id="dns-servers"
+                    value={dnsServers}
+                    onChange={(e) => setDnsServers(e.target.value)}
+                    placeholder="1.1.1.1, 8.8.8.8"
+                  />
+                </div>
               </CardContent>
             </Card>
 
