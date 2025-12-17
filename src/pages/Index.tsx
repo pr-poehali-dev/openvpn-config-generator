@@ -8,6 +8,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import QRCode from 'qrcode';
 
 type Protocol = 'openvpn' | 'wireguard' | 'ikev2' | 'ipsec';
@@ -51,6 +52,29 @@ const protocols: Record<Protocol, ProtocolInfo> = {
   },
 };
 
+interface ServerLocation {
+  country: string;
+  city: string;
+  address: string;
+  flag: string;
+  port: string;
+}
+
+const serverLocations: ServerLocation[] = [
+  { country: 'США', city: 'Нью-Йорк', address: 'us-ny.vpn.example.com', flag: '🇺🇸', port: '1194' },
+  { country: 'США', city: 'Лос-Анджелес', address: 'us-la.vpn.example.com', flag: '🇺🇸', port: '1194' },
+  { country: 'Германия', city: 'Франкфурт', address: 'de-fra.vpn.example.com', flag: '🇩🇪', port: '1194' },
+  { country: 'Германия', city: 'Берлин', address: 'de-ber.vpn.example.com', flag: '🇩🇪', port: '1194' },
+  { country: 'Сингапур', city: 'Сингапур', address: 'sg.vpn.example.com', flag: '🇸🇬', port: '1194' },
+  { country: 'Япония', city: 'Токио', address: 'jp-tok.vpn.example.com', flag: '🇯🇵', port: '1194' },
+  { country: 'Великобритания', city: 'Лондон', address: 'uk-lon.vpn.example.com', flag: '🇬🇧', port: '1194' },
+  { country: 'Франция', city: 'Париж', address: 'fr-par.vpn.example.com', flag: '🇫🇷', port: '1194' },
+  { country: 'Нидерланды', city: 'Амстердам', address: 'nl-ams.vpn.example.com', flag: '🇳🇱', port: '1194' },
+  { country: 'Канада', city: 'Торонто', address: 'ca-tor.vpn.example.com', flag: '🇨🇦', port: '1194' },
+  { country: 'Австралия', city: 'Сидней', address: 'au-syd.vpn.example.com', flag: '🇦🇺', port: '1194' },
+  { country: 'Швейцария', city: 'Цюрих', address: 'ch-zur.vpn.example.com', flag: '🇨🇭', port: '1194' },
+];
+
 const faqItems = [
   {
     question: 'Что такое VPN конфиг и зачем он нужен?',
@@ -82,10 +106,22 @@ export default function Index() {
   const [selectedProtocol, setSelectedProtocol] = useState<Protocol>('wireguard');
   const [activeSection, setActiveSection] = useState<'home' | 'generator' | 'faq'>('home');
   const [generatedConfig, setGeneratedConfig] = useState<string>('');
+  const [selectedLocation, setSelectedLocation] = useState<string>('custom');
   const [serverAddress, setServerAddress] = useState<string>('vpn.example.com');
   const [serverPort, setServerPort] = useState<string>('1194');
   const [dnsServers, setDnsServers] = useState<string>('1.1.1.1, 8.8.8.8');
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
+
+  const handleLocationChange = (value: string) => {
+    setSelectedLocation(value);
+    if (value !== 'custom') {
+      const location = serverLocations.find(loc => `${loc.address}` === value);
+      if (location) {
+        setServerAddress(location.address);
+        setServerPort(location.port);
+      }
+    }
+  };
 
   const generateConfig = () => {
     const timestamp = new Date().toISOString();
@@ -419,12 +455,40 @@ conn vpn-ipsec
 
             <Card>
               <CardHeader>
-                <CardTitle>Настройки сервера</CardTitle>
+                <CardTitle>Выбор сервера</CardTitle>
                 <CardDescription>
-                  Настройте адрес сервера, порт и DNS серверы для вашего конфига
+                  Выберите готовый сервер из списка или укажите свой
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="server-location">
+                    <Icon name="MapPin" size={16} className="inline mr-1" />
+                    Локация сервера
+                  </Label>
+                  <Select value={selectedLocation} onValueChange={handleLocationChange}>
+                    <SelectTrigger id="server-location">
+                      <SelectValue placeholder="Выберите сервер" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="custom">
+                        <div className="flex items-center gap-2">
+                          <Icon name="Settings" size={16} />
+                          <span>Свой сервер</span>
+                        </div>
+                      </SelectItem>
+                      {serverLocations.map((location) => (
+                        <SelectItem key={location.address} value={location.address}>
+                          <div className="flex items-center gap-2">
+                            <span>{location.flag}</span>
+                            <span>{location.country} — {location.city}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="server-address">
@@ -434,8 +498,12 @@ conn vpn-ipsec
                     <Input
                       id="server-address"
                       value={serverAddress}
-                      onChange={(e) => setServerAddress(e.target.value)}
+                      onChange={(e) => {
+                        setServerAddress(e.target.value);
+                        setSelectedLocation('custom');
+                      }}
                       placeholder="vpn.example.com"
+                      disabled={selectedLocation !== 'custom'}
                     />
                   </div>
                   <div className="space-y-2">
